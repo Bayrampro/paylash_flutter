@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:paylash/theme/theme.dart';
+import 'package:paylash/ui/theme/theme.dart';
 
-import 'features/hotspot/views/hotspot_screen.dart';
+import '../screens/hotspot_screen/hotspot_screen.dart';
 
 class SharingApp extends StatelessWidget {
   const SharingApp({super.key});
