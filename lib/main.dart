@@ -1,4 +1,9 @@
-//TODO 3. Реализовать управление состоянием Hotspot с помощью Riverpod
-//TODO 5. Создать UI для проверки работы Hotspot
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:paylash/sharing_app.dart';
 
-void main() {}
+void main() {
+  runApp(
+    const ProviderScope(child: SharingApp()),
+  );
+}
