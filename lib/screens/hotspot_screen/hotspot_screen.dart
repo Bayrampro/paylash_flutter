@@ -7,7 +7,6 @@ class HotspotScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hotspotEnabled = ref.watch(hotspotProvider);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Paýlaş'),
@@ -16,18 +15,21 @@ class HotspotScreen extends ConsumerWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              "Hotspot is ${hotspotEnabled ? 'AÇ' : "ÖÇÜR"}",
-              style: const TextStyle(fontSize: 24),
-            ),
-            const SizedBox(
-              height: 20,
-            ),
+            const SizedBox(height: 20),
             ElevatedButton(
-                onPressed: () async {
-                  await ref.read(hotspotProvider.notifier).toggleHotspot();
-                },
-                child: Text(hotspotEnabled ? 'Hotspoty Öçür' : "Hotspoty aç")),
+              onPressed: () async {
+                try {
+                  await ref
+                      .read(hotspotProvider.notifier)
+                      .openHotspotSettings();
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Ошибка: $e")),
+                  );
+                }
+              },
+              child: const Text('Открыть настройки точки доступа (Hotspot)'),
+            ),
           ],
         ),
       ),
