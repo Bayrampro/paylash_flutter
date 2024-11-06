@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../ui/ui.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -83,26 +85,22 @@ class _HomeScreenState extends State<HomeScreen> {
               child: CircleIcon(
                 imageUrl: 'assets/send-icon.png',
                 color: Color(0xFF0097b2),
-                size: 250,
+                size: 200,
               ),
             ),
           ),
           const SliverToBoxAdapter(
-            child: SizedBox(
-              height: 40,
-            ),
+            child: SizedBox(height: 40),
           ),
           const SliverToBoxAdapter(
             child: CircleIcon(
               imageUrl: 'assets/upload-icon.png',
               color: Color(0xFFc1ff72),
-              size: 250,
+              size: 200,
             ),
           ),
           const SliverToBoxAdapter(
-            child: SizedBox(
-              height: 40,
-            ),
+            child: SizedBox(height: 40),
           ),
           SliverToBoxAdapter(
             child: Center(
@@ -111,47 +109,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Text(
                   'Ähli faýllaryňy gysga wagtyň içinde paýlaş',
                   style: theme.textTheme.titleLarge
-                      ?.copyWith(color: theme.canvasColor, fontSize: 30),
+                      ?.copyWith(color: theme.canvasColor, fontSize: 25),
                   textAlign: TextAlign.center,
                 ),
               ),
             ),
           )
         ],
-      ),
-    );
-  }
-}
-
-class CircleIcon extends StatelessWidget {
-  const CircleIcon({
-    super.key,
-    required this.imageUrl,
-    required this.color,
-    required this.size,
-  });
-
-  final String imageUrl;
-  final Color color;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.center,
-      child: SizedBox(
-        width: size,
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(150),
-            color: color,
-          ),
-          child: Image.asset(
-            imageUrl,
-            width: size,
-            height: size,
-          ),
-        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:paylash/router/router.dart';
-import 'package:paylash/ui/theme/theme.dart';
+
+import '../ui/ui.dart';
 
 class SharingApp extends StatelessWidget {
   const SharingApp({super.key});

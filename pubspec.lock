@@ -57,6 +57,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.8"
+  dio:
+    dependency: transitive
+    description:
+      name: dio
+      sha256: "7d328c4d898a61efc3cd93655a0955858e29a0aa647f0f9e02d59b3bb275e2e8"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.6"
   fake_async:
     dependency: transitive
     description:
@@ -78,6 +86,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.2"
+  flutter_p2p_connection:
+    dependency: "direct main"
+    description:
+      name: flutter_p2p_connection
+      sha256: "788b228c89a5260be1ef539584a2f7a78df853056df51ae8f0e8aa459a6bc6a0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.1"
   flutter_riverpod:
     dependency: "direct main"
     description:
@@ -104,6 +120,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "14.4.1"
+  http_parser:
+    dependency: transitive
+    description:
+      name: http_parser
+      sha256: "2aa08ce0341cc9b354a498388e30986515406668dbcc4f7c950c3e715496693b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.2"
   leak_tracker:
     dependency: transitive
     description:
@@ -168,6 +192,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.12.0"
+  mime_type:
+    dependency: transitive
+    description:
+      name: mime_type
+      sha256: d652b613e84dac1af28030a9fba82c0999be05b98163f9e18a0849c6e63838bb
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
   path:
     dependency: transitive
     description:
@@ -301,6 +333,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.0"
+  typed_data:
+    dependency: transitive
+    description:
+      name: typed_data
+      sha256: facc8d6582f16042dd49f2463ff1bd6e2c9ef9f3d5da3d9b087e244a7b564b3c
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.2"
   vector_math:
     dependency: transitive
     description:
@@ -317,14 +357,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "14.2.1"
-  wifi_iot:
-    dependency: "direct main"
-    description:
-      name: wifi_iot
-      sha256: "4a3301f71663a908bb50ffe6d9dc9e8b8383fab48368accf978409bde96e9aca"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.19+1"
 sdks:
   dart: ">=3.4.0 <4.0.0"
   flutter: ">=3.19.0"

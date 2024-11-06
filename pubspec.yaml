@@ -13,7 +13,7 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.6
-  wifi_iot: ^0.3.19
+  flutter_p2p_connection: ^2.0.1
   flutter_riverpod: ^2.6.1
   permission_handler: ^10.2.0
   android_intent_plus: ^2.0.3
