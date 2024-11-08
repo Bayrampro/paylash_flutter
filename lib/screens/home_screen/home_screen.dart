@@ -1,6 +1,9 @@
-import 'package:flutter/material.dart';
+import 'dart:developer';
 
-import '../../ui/ui.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:paylash/services/location_manager.dart';
+import 'package:paylash/ui/widgets/circle_icon.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,13 +15,32 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _showAppBar = false;
+  late LocationManager _locationManager; // Declare LocationManager instance
 
   @override
   void initState() {
     super.initState();
+    _locationManager = LocationManager(); // Initialize LocationManager
     _scrollController.addListener(_scrollListener);
+
+    // Request location access if necessary
+    _requestLocationPermission();
   }
 
+  // Function to request location permission and enable location services
+  void _requestLocationPermission() async {
+    bool permissionGranted = await _locationManager.requestLocationPermission();
+    if (permissionGranted) {
+      // Enable or get the location
+      var location = await _locationManager.getCurrentLocation();
+      log("Current Location: $location"); // You can use the location here
+    } else {
+      // Handle permission denial
+      log("Location permission denied.");
+    }
+  }
+
+  // Method to toggle AppBar visibility based on scroll position
   void _scrollListener() {
     if (_scrollController.position.pixels > 600) {
       setState(() {
@@ -52,25 +74,16 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             actions: [
               GestureDetector(
-                child: Container(
-                  width: 70,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: Image.asset('assets/send-icon.png'),
-                ),
-                onTap: () {},
+                child: _buildIcon('assets/send-icon.png'),
+                onTap: () {
+                  // Your send button logic
+                },
               ),
               GestureDetector(
-                child: Container(
-                  width: 70,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: Image.asset('assets/upload-icon.png'),
-                ),
+                child: _buildIcon('assets/upload-icon.png'),
+                onTap: () {
+                  // Your upload button logic
+                },
               ),
             ],
           ),
@@ -79,13 +92,18 @@ class _HomeScreenState extends State<HomeScreen> {
       body: CustomScrollView(
         controller: _scrollController,
         slivers: [
-          const SliverToBoxAdapter(
+          SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.only(top: 100.0),
-              child: CircleIcon(
-                imageUrl: 'assets/send-icon.png',
-                color: Color(0xFF0097b2),
-                size: 200,
+              padding: const EdgeInsets.only(top: 100.0),
+              child: GestureDetector(
+                child: const CircleIcon(
+                  imageUrl: 'assets/send-icon.png',
+                  color: Color(0xFF0097b2),
+                  size: 200,
+                ),
+                onTap: () {
+                  context.go('/devices'); // Navigate to devices
+                },
               ),
             ),
           ),
@@ -117,6 +135,18 @@ class _HomeScreenState extends State<HomeScreen> {
           )
         ],
       ),
+    );
+  }
+
+  // Helper function to build rounded icons
+  Widget _buildIcon(String imageUrl) {
+    return Container(
+      width: 70,
+      height: 100,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Image.asset(imageUrl),
     );
   }
 }

@@ -3,66 +3,53 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:paylash/app/sharing_app.dart';
 import 'package:paylash/wifi_direct_manager/wifi_direct_manager.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // final wifiP2P = FlutterP2pConnection();
-  // await wifiP2P.initialize();
+  // Request location permission using Geolocator
+  bool permissionGranted = await _checkLocationPermission();
 
-  final locationStatus = await Permission.location.request();
+  if (permissionGranted) {
+    // Permission granted, enable Wi-Fi Direct and start discovering devices
+    try {
+      await WifiDirectManager().discoverDevices();
+    } catch (e) {
+      log("Error during device discovery: $e");
+    }
 
-  if (locationStatus.isGranted) {
-    // Future<void> discoverPeers() async {
-    //   try {
-    //     // await wifiP2P.discover();
-    //     log("Процесс обнаружения запущен...");
-
-    //     // final discoveredPeers = await wifiP2P.fetchPeers();
-
-    //     log('$discoveredPeers');
-
-    //     if (discoveredPeers.isEmpty) {
-    //       log("Устройства не найдены, повторная попытка...");
-    //       await retryDiscoverPeers(wifiP2P);
-    //     } else {
-    //       for (var peer in discoveredPeers) {
-    //         log('Найдено устройство: $peer');
-    //       }
-    //     }
-    //   } catch (e) {
-    //     log("Ошибка при обнаружении устройств: $e");
-    //   }
-    // }
-
-    await WifiDirectManager().discoverDevices();
+    // Run the app after Wi-Fi Direct setup is complete
     runApp(
-      const ProviderScope(child: SharingApp()),
+      const ProviderScope(
+        child: SharingApp(),
+      ),
     );
   } else {
-    log("Не удалось получить необходимые разрешения для работы с Wi-Fi Direct.");
+    // Log an error if location permission is not granted
+    log("Location permission is not granted, unable to proceed with Wi-Fi Direct.");
   }
 }
 
-// Future<void> retryDiscoverPeers(FlutterP2pConnection wifiP2P) async {
-//   try {
-//     await wifiP2P.discover();
-//     log("Повторный процесс обнаружения запущен...");
+// Method to check location permission
+Future<bool> _checkLocationPermission() async {
+  bool isLocationServiceEnabled = await Geolocator.isLocationServiceEnabled();
 
-//     final discoveredPeers = await wifiP2P.fetchPeers();
-//     if (discoveredPeers.isEmpty) {
-//       log("Устройства не найдены при повторном обнаружении.");
-//       await Future.delayed(const Duration(seconds: 3));
-//       retryDiscoverPeers(wifiP2P);
-//     } else {
-//       for (var peer in discoveredPeers) {
-//         log('Найдено устройство: $peer');
-//       }
-//     }
-//   } catch (e) {
-//     log("Ошибка при повторном обнаружении устройств: $e");
-//   }
-// }
+  if (!isLocationServiceEnabled) {
+    log("Location services are disabled. Please enable them.");
+    return false;
+  }
+
+  LocationPermission permission = await Geolocator.checkPermission();
+
+  if (permission == LocationPermission.denied ||
+      permission == LocationPermission.deniedForever) {
+    // Request permission if denied
+    permission = await Geolocator.requestPermission();
+  }
+
+  return permission == LocationPermission.whileInUse ||
+      permission == LocationPermission.always;
+}
