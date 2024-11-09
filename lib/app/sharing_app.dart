@@ -9,6 +9,7 @@ class SharingApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
+      debugShowCheckedModeBanner: false,
       title: "Paýlaş",
       theme: theme,
       routerConfig: router,

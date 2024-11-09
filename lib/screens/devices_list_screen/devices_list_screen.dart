@@ -1,13 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:paylash/wifi_direct_manager/wifi_direct_manager.dart';
+import 'package:paylash/providers/devices_list_provider.dart';
 
-final devicesProvider = StreamProvider<List<String>>((ref) {
-  final wifiDirectManager = WifiDirectManager();
-  wifiDirectManager.discoverDevices(); // Запуск обнаружения
-  return wifiDirectManager.getDiscoveredDevicesStream();
-});
+import '../../ui/ui.dart';
 
 class DevicesListScreen extends ConsumerWidget {
   const DevicesListScreen({super.key});
@@ -17,16 +12,26 @@ class DevicesListScreen extends ConsumerWidget {
     final devicesAsyncValue = ref.watch(devicesProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        centerTitle: true,
-        title: GestureDetector(
-          onTap: () {
-            context.go("/");
-          },
-          child: const Text("PAÝLAŞ"),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(80),
+        child: SimpleAppBar(
+          actions: [
+            devicesAsyncValue.when(
+              data: (data) => IconButton(
+                onPressed: () =>
+                    ref.read(streamRefreshTriggerProvider.notifier).state++,
+                icon: const Icon(
+                  Icons.refresh,
+                  size: 30,
+                ),
+              ),
+              error: (error, stackTrace) => Container(),
+              loading: () => Container(),
+            )
+          ],
         ),
       ),
-      body: devicesAsyncValue.when(
+      body: devicesAsyncValue.when<Widget>(
         data: (devices) => devices.isNotEmpty
             ? ListView.builder(
                 itemCount: devices.length,
@@ -34,26 +39,27 @@ class DevicesListScreen extends ConsumerWidget {
                   final deviceName = devices[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16.0, vertical: 8.0),
-                    child: Card(
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        title: Text(deviceName),
-                        subtitle: const Text("Tap to connect"),
-                        onTap: () {
-                          // Логика подключения к устройству
-                        },
-                      ),
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    child: DeviceListItem(
+                      deviceName: deviceName,
+                      onConnect: () {
+                        //TODO: Логика подключения к устройству
+                      },
                     ),
                   );
                 },
               )
-            : const Center(child: Text("Нет доступных устройств")),
+            : NoDevicesFound(
+                onRefresh: () =>
+                    ref.read(streamRefreshTriggerProvider.notifier).state++,
+              ),
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text("Ошибка: $error")),
+        error: (error, stack) => NoDevicesFound(
+          onRefresh: () =>
+              ref.read(streamRefreshTriggerProvider.notifier).state++,
+        ),
       ),
     );
   }

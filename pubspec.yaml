@@ -19,6 +19,7 @@ dependencies:
   android_intent_plus: ^2.0.3
   go_router: ^14.4.1
   geolocator: ^10.0.1 
+  get_it: ^8.0.2
 
 dev_dependencies:
   flutter_test:
@@ -33,6 +34,7 @@ flutter:
   assets:
     - assets/send-icon.png
     - assets/upload-icon.png
+    - assets/app_bar_logo.png
 
   # example:
   # fonts:

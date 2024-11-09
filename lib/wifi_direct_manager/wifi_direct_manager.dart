@@ -29,7 +29,38 @@ class WifiDirectManager {
     return deviceStreamController.stream;
   }
 
-  // Метод для включения Wi-Fi Direct
+  // Проверка включена ли геолокация
+  Future<bool> isLocationEnabled() async {
+    try {
+      final bool result = await platform.invokeMethod('isLocationEnabled');
+      return result;
+    } on PlatformException catch (e) {
+      log("Ошибка при проверке геолокации: ${e.message}");
+      return false;
+    }
+  }
+
+  // Включение геолокации
+  Future<void> enableLocation() async {
+    try {
+      await platform.invokeMethod('enableLocation');
+    } on PlatformException catch (e) {
+      log("Ошибка при включении геолокации: ${e.message}");
+    }
+  }
+
+  // Проверка включен ли Wi-Fi Direct
+  Future<bool> isWiFiDirectEnabled() async {
+    try {
+      final bool result = await platform.invokeMethod('isWiFiDirectEnabled');
+      return result;
+    } on PlatformException catch (e) {
+      log("Ошибка при проверке Wi-Fi Direct: ${e.message}");
+      return false;
+    }
+  }
+
+  // Включение Wi-Fi Direct
   Future<void> enableWiFiDirect() async {
     try {
       await platform.invokeMethod('enableWiFiDirect');

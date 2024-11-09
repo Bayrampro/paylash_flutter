@@ -1,46 +1,29 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:paylash/services/location_manager.dart';
+import 'package:paylash/providers/is_loaction_enabled_provider.dart';
+import 'package:paylash/providers/is_wifi_direct_enabled_provider.dart';
 import 'package:paylash/ui/widgets/circle_icon.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _showAppBar = false;
-  late LocationManager _locationManager; // Declare LocationManager instance
 
   @override
   void initState() {
     super.initState();
-    _locationManager = LocationManager(); // Initialize LocationManager
+    ref.read(isLocationEnabledProvider.notifier).checkLocation();
+    ref.read(isWifiDirectEnabledProvider.notifier).checkWifiDirect();
     _scrollController.addListener(_scrollListener);
-
-    // Request location access if necessary
-    _requestLocationPermission();
   }
 
-  // Function to request location permission and enable location services
-  void _requestLocationPermission() async {
-    bool permissionGranted = await _locationManager.requestLocationPermission();
-    if (permissionGranted) {
-      // Enable or get the location
-      var location = await _locationManager.getCurrentLocation();
-      log("Current Location: $location"); // You can use the location here
-    } else {
-      // Handle permission denial
-      log("Location permission denied.");
-    }
-  }
-
-  // Method to toggle AppBar visibility based on scroll position
   void _scrollListener() {
     if (_scrollController.position.pixels > 600) {
       setState(() {
@@ -57,6 +40,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final mediaQuery = MediaQuery.of(context);
+    final isLocationEnabled = ref.watch(isLocationEnabledProvider);
+    final isWifiDirectEnabled = ref.watch(isWifiDirectEnabledProvider);
 
     return Scaffold(
       appBar: PreferredSize(
@@ -102,7 +87,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   size: 200,
                 ),
                 onTap: () {
-                  context.go('/devices'); // Navigate to devices
+                  if (!isWifiDirectEnabled || !isLocationEnabled) {
+                    context.go('/enable');
+                    return;
+                  }
+                  context.go('/devices');
                 },
               ),
             ),

@@ -1,5 +1,6 @@
 package com.bynet.paylash;
 
+import android.net.wifi.WifiManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -39,55 +40,77 @@ public class MainActivity extends FlutterActivity {
         channel = wifiP2pManager.initialize(this, getMainLooper(), null);
 
         // Включение Wi-Fi Direct и геолокации
-        enableWiFiDirectIfNecessary();
-        enableLocationIfNecessary();
+        // enableWiFiDirectIfNecessary();
+        // enableLocationIfNecessary();
 
         // Register the receiver to detect Wi-Fi Direct devices
         registerReceiver(wifiP2pReceiver, new IntentFilter(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION));
 
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
             .setMethodCallHandler((call, result) -> {
-                if (call.method.equals("discoverDevices")) {
-                    startDeviceDiscovery(result);
-                } else if (call.method.equals("enableWiFiDirect")) {
-                    enableWiFiDirect();
-                    result.success(null);
-                } else {
-                    result.notImplemented();
+                // if (call.method.equals("discoverDevices")) {
+                //     startDeviceDiscovery(result);
+                // } else if (call.method.equals("enableWiFiDirect")) {
+                //     enableWiFiDirectIfNecessary();
+                //     result.success(null);
+                // } else {
+                //     result.notImplemented();
+                // }
+                switch (call.method) {
+                    case "discoverDevices":
+                        startDeviceDiscovery(result);
+                        break;
+                    case "isLocationEnabled":
+                        result.success(isLocationEnabled());
+                        break;
+                    case "enableLocation":
+                        enableLocationIfNecessary();
+                        result.success(null);
+                        break;
+                    case "isWiFiDirectEnabled":
+                        result.success(isWiFiDirectEnabled());
+                        break;
+                    case "enableWiFiDirect":
+                        enableWiFiDirectIfNecessary();
+                        result.success(null);
+                        break;
+                    default:
+                        result.notImplemented();
+                        break;
                 }
             });
     }
 
-    // Проверка и включение Wi-Fi Direct, если он выключен
-    private void enableWiFiDirectIfNecessary() {
-        // Логика для проверки и включения Wi-Fi Direct
-        if (!isWiFiDirectEnabled()) {
-            enableWiFiDirect();
-        }
-    }
-
     // Проверка и включение геолокации, если она выключена
     private void enableLocationIfNecessary() {
-        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        boolean isLocationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-                || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
 
-        if (!isLocationEnabled) {
+        if (!isLocationEnabled()) {
             Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
             startActivityForResult(intent, 0);
         }
     }
 
+    private boolean isLocationEnabled(){
+        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        boolean isLocationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        return isLocationEnabled;        
+    }
+
     // Метод для включения Wi-Fi Direct
-    private void enableWiFiDirect() {
-        Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
-        startActivity(intent);
+    private void enableWiFiDirectIfNecessary() {
+        if (!isWiFiDirectEnabled()) {
+            Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
+            startActivity(intent);
+        }
     }
 
     // Метод для проверки включенности Wi-Fi Direct
     private boolean isWiFiDirectEnabled() {
-        // Проверка включенности Wi-Fi Direct (используйте ваш метод или настройку)
-        return true; // Для демонстрации возвращаем true
+        // Здесь вы можете добавить код для проверки состояния Wi-Fi Direct.
+        // Если доступ к состоянию Wi-Fi Direct у вас ограничен, можно просто проверить, включен ли Wi-Fi.
+        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        return wifiManager.isWifiEnabled(); // Проверка включенности Wi-Fi
     }
 
     // Метод для начала обнаружения устройств
