@@ -1,5 +1,6 @@
 package com.bynet.paylash;
 
+import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.WifiManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -22,14 +23,14 @@ import android.content.pm.PackageManager;
 import android.location.LocationManager;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "com.bynet.paylash/wifiDirect";
     private WifiP2pManager wifiP2pManager;
     private Channel channel;
-    private final List<String> discoveredDevices = new ArrayList<>();
-
     private static final int REQUEST_LOCATION_PERMISSION = 1;
 
     @Override
@@ -39,27 +40,19 @@ public class MainActivity extends FlutterActivity {
         wifiP2pManager = (WifiP2pManager) getSystemService(WIFI_P2P_SERVICE);
         channel = wifiP2pManager.initialize(this, getMainLooper(), null);
 
-        // Включение Wi-Fi Direct и геолокации
-        // enableWiFiDirectIfNecessary();
-        // enableLocationIfNecessary();
-
         // Register the receiver to detect Wi-Fi Direct devices
         registerReceiver(wifiP2pReceiver, new IntentFilter(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION));
 
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
             .setMethodCallHandler((call, result) -> {
-                // if (call.method.equals("discoverDevices")) {
-                //     startDeviceDiscovery(result);
-                // } else if (call.method.equals("enableWiFiDirect")) {
-                //     enableWiFiDirectIfNecessary();
-                //     result.success(null);
-                // } else {
-                //     result.notImplemented();
-                // }
                 switch (call.method) {
                     case "discoverDevices":
                         startDeviceDiscovery(result);
                         break;
+                    case "connectToDevice":
+                        String deviceAddress = call.argument("deviceAddress");
+                        connectToDevice(deviceAddress, result);
+                        break;    
                     case "isLocationEnabled":
                         result.success(isLocationEnabled());
                         break;
@@ -81,9 +74,26 @@ public class MainActivity extends FlutterActivity {
             });
     }
 
+    // Метод для подключения к выбранному устройству через Wi-Fi Direct
+    private void connectToDevice(String deviceAddress, MethodChannel.Result result) {
+        WifiP2pConfig config = new WifiP2pConfig();
+        config.deviceAddress = deviceAddress; // Устанавливаем MAC-адрес выбранного устройства
+
+        wifiP2pManager.connect(channel, config, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                result.success("Подключение к устройству " + deviceAddress + " прошло успешно");
+            }
+
+            @Override
+            public void onFailure(int reasonCode) {
+                result.error("CONNECTION_FAILED", "Не удалось подключиться к устройству: " + deviceAddress, null);
+            }
+        });
+    }
+
     // Проверка и включение геолокации, если она выключена
     private void enableLocationIfNecessary() {
-
         if (!isLocationEnabled()) {
             Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
             startActivityForResult(intent, 0);
@@ -92,9 +102,8 @@ public class MainActivity extends FlutterActivity {
 
     private boolean isLocationEnabled(){
         LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        boolean isLocationEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
                 || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        return isLocationEnabled;        
     }
 
     // Метод для включения Wi-Fi Direct
@@ -107,10 +116,8 @@ public class MainActivity extends FlutterActivity {
 
     // Метод для проверки включенности Wi-Fi Direct
     private boolean isWiFiDirectEnabled() {
-        // Здесь вы можете добавить код для проверки состояния Wi-Fi Direct.
-        // Если доступ к состоянию Wi-Fi Direct у вас ограничен, можно просто проверить, включен ли Wi-Fi.
         WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        return wifiManager.isWifiEnabled(); // Проверка включенности Wi-Fi
+        return wifiManager.isWifiEnabled();
     }
 
     // Метод для начала обнаружения устройств
@@ -143,7 +150,7 @@ public class MainActivity extends FlutterActivity {
         ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
     }
 
-    // Приемник для обработки Wi-Fi Direct
+    // Приемник для обработки Wi-Fi Direct событий
     private final BroadcastReceiver wifiP2pReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -158,23 +165,40 @@ public class MainActivity extends FlutterActivity {
     private final PeerListListener peerListListener = new PeerListListener() {
         @Override
         public void onPeersAvailable(WifiP2pDeviceList peerList) {
-            discoveredDevices.clear();
+            List<Map<String, String>> deviceInfoList = new ArrayList<>();
+
             for (WifiP2pDevice device : peerList.getDeviceList()) {
-                discoveredDevices.add(device.deviceName + " - " + device.deviceAddress);
+                Map<String, String> deviceInfo = new HashMap<>();
+                deviceInfo.put("deviceName", device.deviceName);
+                deviceInfo.put("deviceAddress", device.deviceAddress);
+                deviceInfoList.add(deviceInfo);
             }
-            sendDiscoveredDevicesToFlutter();
+
+            sendDiscoveredDevicesToFlutter(deviceInfoList);
         }
     };
 
-    // Метод для отправки найденных устройств в Flutter
-    private void sendDiscoveredDevicesToFlutter() {
-        new MethodChannel(getFlutterEngine().getDartExecutor().getBinaryMessenger(), CHANNEL)
-            .invokeMethod("discoveredDevices", discoveredDevices);
+    private void sendDiscoveredDevicesToFlutter(List<Map<String, String>> deviceInfoList) {
+        MethodChannel methodChannel = new MethodChannel(getFlutterEngine().getDartExecutor().getBinaryMessenger(), CHANNEL);
+        List<String> deviceInfoListAsString = new ArrayList<>();
+
+        // Преобразуем каждый элемент в строку (например, формат deviceName, deviceAddress)
+        for (Map<String, String> deviceInfo : deviceInfoList) {
+            String deviceName = deviceInfo.get("deviceName");
+            String deviceAddress = deviceInfo.get("deviceAddress");
+            deviceInfoListAsString.add(deviceName + "," + deviceAddress);
+        }
+
+        // Отправляем список строк в Flutter
+        methodChannel.invokeMethod("discoveredDevices", deviceInfoListAsString);
     }
 
+
+    
     @Override
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(wifiP2pReceiver);
     }
 }
+

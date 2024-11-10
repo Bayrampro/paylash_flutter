@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:paylash/providers/devices_list_provider.dart';
+import 'package:paylash/wifi_direct_manager/wifi_direct_manager.dart';
 
 import '../../ui/ui.dart';
 
@@ -43,9 +44,11 @@ class DevicesListScreen extends ConsumerWidget {
                       vertical: 8.0,
                     ),
                     child: DeviceListItem(
-                      deviceName: deviceName,
+                      deviceName:
+                          deviceName.deviceName + deviceName.deviceAddress,
                       onConnect: () {
-                        //TODO: Логика подключения к устройству
+                        WifiDirectManager()
+                            .connectToDevice(deviceName.deviceAddress);
                       },
                     ),
                   );
