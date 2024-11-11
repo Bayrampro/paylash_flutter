@@ -1,5 +1,6 @@
 package com.bynet.paylash;
 
+import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.WifiManager;
 import android.content.BroadcastReceiver;
@@ -49,10 +50,16 @@ public class MainActivity extends FlutterActivity {
                     case "discoverDevices":
                         startDeviceDiscovery(result);
                         break;
+                    case "disconnectFromDevice":
+                        disconnectFromDevice(result);
+                        break;    
                     case "connectToDevice":
                         String deviceAddress = call.argument("deviceAddress");
                         connectToDevice(deviceAddress, result);
-                        break;    
+                        break;
+                    case "isDeviceConnected":
+                        isDeviceConnected(isConnected -> result.success(isConnected));
+                        break;
                     case "isLocationEnabled":
                         result.success(isLocationEnabled());
                         break;
@@ -74,6 +81,57 @@ public class MainActivity extends FlutterActivity {
             });
     }
 
+    // Метод для отключения от устройства
+    // private void disconnectFromDevice(MethodChannel.Result result) {
+    //     wifiP2pManager.cancelConnect(channel, new WifiP2pManager.ActionListener() {
+    //         @Override
+    //         public void onSuccess() {
+    //             result.success("Устройство успешно отключено");
+    //         }
+
+    //         @Override
+    //         public void onFailure(int reason) {
+    //             result.error("DISCONNECT_FAILED", "Не удалось отключиться от устройства", null);
+    //         }
+    //     });
+    // }
+
+    private void disconnectFromDevice(MethodChannel.Result result) {
+
+        wifiP2pManager.requestConnectionInfo(channel, info -> {
+            if(info.groupFormed){
+                wifiP2pManager.removeGroup(channel, new WifiP2pManager.ActionListener() {
+                    @Override
+                    public void onSuccess() {
+                        result.success("Устройство успешно отключено");
+                    }
+
+                    @Override
+                    public void onFailure(int reason) {
+                        String errorMessage;
+                        switch (reason) {
+                            case WifiP2pManager.BUSY:
+                                errorMessage = "Система занята";
+                                break;
+                            case WifiP2pManager.ERROR:
+                                errorMessage = "Произошла ошибка";
+                                break;
+                            case WifiP2pManager.P2P_UNSUPPORTED:
+                                errorMessage = "P2P не поддерживается на этом устройстве";
+                                break;
+                            default:
+                                errorMessage = "Неизвестная ошибка";
+                                break;
+                        }
+                        result.error("DISCONNECT_FAILED", "Не удалось отключиться от устройства" + errorMessage, null);
+                    }
+                });
+            } else{
+                result.success("Устройство уже отключено");
+            }
+        });
+    }
+
     // Метод для подключения к выбранному устройству через Wi-Fi Direct
     private void connectToDevice(String deviceAddress, MethodChannel.Result result) {
         WifiP2pConfig config = new WifiP2pConfig();
@@ -91,6 +149,17 @@ public class MainActivity extends FlutterActivity {
             }
         });
     }
+
+    // Метод для проверки подключения устройства с использованием callback
+    public interface BooleanCallback {
+        void onResult(boolean result);
+    }
+    private void isDeviceConnected(BooleanCallback callback) {
+        wifiP2pManager.requestConnectionInfo(channel, info -> {
+            callback.onResult(info.groupFormed);
+        });
+    }
+
 
     // Проверка и включение геолокации, если она выключена
     private void enableLocationIfNecessary() {

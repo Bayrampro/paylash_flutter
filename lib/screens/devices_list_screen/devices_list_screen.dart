@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:paylash/providers/devices_list_provider.dart';
+import 'package:paylash/providers/is_device_connected_provider.dart';
 import 'package:paylash/wifi_direct_manager/wifi_direct_manager.dart';
 
 import '../../ui/ui.dart';
@@ -11,11 +13,22 @@ class DevicesListScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final devicesAsyncValue = ref.watch(devicesProvider);
+    final isDeviceConnected = ref.watch(isDeviceConnectedProvider);
+
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) {
+        if (isDeviceConnected) {
+          context.go('/file-picker');
+        }
+      },
+    );
 
     return Scaffold(
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(80),
         child: SimpleAppBar(
+          iconData: Icons.arrow_back,
+          onBack: () => context.go('/'),
           actions: [
             devicesAsyncValue.when(
               data: (data) => IconButton(
@@ -37,18 +50,17 @@ class DevicesListScreen extends ConsumerWidget {
             ? ListView.builder(
                 itemCount: devices.length,
                 itemBuilder: (context, index) {
-                  final deviceName = devices[index];
+                  final device = devices[index];
                   return Padding(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 16.0,
                       vertical: 8.0,
                     ),
                     child: DeviceListItem(
-                      deviceName:
-                          deviceName.deviceName + deviceName.deviceAddress,
+                      deviceName: device.deviceName,
                       onConnect: () {
                         WifiDirectManager()
-                            .connectToDevice(deviceName.deviceAddress);
+                            .connectToDevice(device.deviceAddress);
                       },
                     ),
                   );

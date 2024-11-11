@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 class SimpleAppBar extends StatelessWidget {
   const SimpleAppBar({
     super.key,
     this.actions,
+    required this.onBack,
+    required this.iconData,
   });
 
   final List<Widget>? actions;
+  final VoidCallback onBack;
+  final IconData iconData;
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
       leading: IconButton(
-        onPressed: () => context.go('/'),
-        icon: const Icon(Icons.arrow_back),
+        onPressed: onBack,
+        icon: Icon(iconData),
       ),
       toolbarHeight: 80,
       centerTitle: true,

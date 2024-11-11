@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:get_it/get_it.dart';
+import 'package:go_router/go_router.dart';
 import 'package:paylash/providers/is_loaction_enabled_provider.dart';
 import 'package:paylash/providers/is_wifi_direct_enabled_provider.dart';
 import 'package:paylash/wifi_direct_manager/wifi_direct_manager.dart';
@@ -17,9 +18,12 @@ class EnableButtonsScreen extends ConsumerWidget {
     final wifiDirectManager = GetIt.I.get<WifiDirectManager>();
 
     return Scaffold(
-      appBar: const PreferredSize(
-        preferredSize: Size.fromHeight(80),
-        child: SimpleAppBar(),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(80),
+        child: SimpleAppBar(
+          iconData: Icons.arrow_back,
+          onBack: () => context.go('/'),
+        ),
       ),
       body: Column(
         children: [

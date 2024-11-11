@@ -6,6 +6,8 @@ import 'package:get_it/get_it.dart';
 import 'package:paylash/app/sharing_app.dart';
 import 'package:paylash/wifi_direct_manager/wifi_direct_manager.dart';
 
+//TODO: Реализовать экран селекции файлов
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 

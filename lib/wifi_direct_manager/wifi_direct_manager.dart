@@ -16,7 +16,7 @@ class WifiDirectManager {
     }
   }
 
-// Метод для получения потока найденных устройств как объектов WifiP2pDevice
+  // Метод для получения потока найденных устройств как объектов WifiP2pDevice
   Stream<List<WifiP2pDevice>> getDiscoveredDevicesStream() {
     final StreamController<List<WifiP2pDevice>> deviceStreamController =
         StreamController<List<WifiP2pDevice>>();
@@ -34,7 +34,9 @@ class WifiDirectManager {
             String deviceName = details[0];
             String deviceAddress = details[1];
             return WifiP2pDevice(
-                deviceName: deviceName, deviceAddress: deviceAddress);
+              deviceName: deviceName,
+              deviceAddress: deviceAddress,
+            );
           } else {
             // Если формат не соответствует, вернем пустой объект или обработаем ошибку
             return WifiP2pDevice(
@@ -91,6 +93,7 @@ class WifiDirectManager {
     }
   }
 
+  // Подключение к устройству
   Future<void> connectToDevice(String deviceAddress) async {
     try {
       final result = await platform
@@ -102,6 +105,26 @@ class WifiDirectManager {
       if (e.code == "CONNECTION_FAILED") {
         log("Не удалось подключиться: ${e.message}");
       }
+    }
+  }
+
+  // Проверка подключен ли устройство
+  Future<bool> isDeviceConnect() async {
+    try {
+      final bool isConnected = await platform.invokeMethod('isDeviceConnected');
+      return isConnected;
+    } on PlatformException catch (e) {
+      log("Ошибка при проверке состояния подключения: ${e.message}");
+      return false;
+    }
+  }
+
+  // Метод для отключения от устройства
+  Future<void> disconnectFromDevice() async {
+    try {
+      await platform.invokeMethod('disconnectFromDevice');
+    } on PlatformException catch (e) {
+      log("Ошибка при отключении от устройства: ${e.message}");
     }
   }
 }
