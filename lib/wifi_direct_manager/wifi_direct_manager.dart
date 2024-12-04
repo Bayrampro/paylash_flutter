@@ -127,4 +127,14 @@ class WifiDirectManager {
       log("Ошибка при отключении от устройства: ${e.message}");
     }
   }
+
+  // Добавьте этот метод в WifiDirectManager
+  Future<void> sendFile(String filePath) async {
+    try {
+      await platform.invokeMethod('sendFile', {'filePath': filePath});
+      log("Файл отправлен успешно: $filePath");
+    } on PlatformException catch (e) {
+      log("Ошибка при отправке файла: ${e.message}");
+    }
+  }
 }

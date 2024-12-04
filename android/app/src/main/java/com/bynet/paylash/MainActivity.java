@@ -27,9 +27,26 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import android.net.Uri;
+
+import android.provider.MediaStore;
+import android.provider.MediaStore.Images;
+
+import android.database.Cursor; // For querying the content resolver
+import android.net.Uri; // For handling URIs
+import android.provider.MediaStore; // For accessing media files
+import android.util.Log; // For logging errors
+import java.util.ArrayList; // For storing file paths
+
+import android.Manifest;
+import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "com.bynet.paylash/wifiDirect";
+    private static final String FILE_PICKER_CHANNEL = "com.bynet.paylash/filePicker"; // Новый канал для файлов
+
     private WifiP2pManager wifiP2pManager;
     private Channel channel;
     private static final int REQUEST_LOCATION_PERMISSION = 1;
@@ -45,61 +62,134 @@ public class MainActivity extends FlutterActivity {
         registerReceiver(wifiP2pReceiver, new IntentFilter(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION));
 
         new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), CHANNEL)
-            .setMethodCallHandler((call, result) -> {
-                switch (call.method) {
-                    case "discoverDevices":
-                        startDeviceDiscovery(result);
-                        break;
-                    case "disconnectFromDevice":
-                        disconnectFromDevice(result);
-                        break;    
-                    case "connectToDevice":
-                        String deviceAddress = call.argument("deviceAddress");
-                        connectToDevice(deviceAddress, result);
-                        break;
-                    case "isDeviceConnected":
-                        isDeviceConnected(isConnected -> result.success(isConnected));
-                        break;
-                    case "isLocationEnabled":
-                        result.success(isLocationEnabled());
-                        break;
-                    case "enableLocation":
-                        enableLocationIfNecessary();
-                        result.success(null);
-                        break;
-                    case "isWiFiDirectEnabled":
-                        result.success(isWiFiDirectEnabled());
-                        break;
-                    case "enableWiFiDirect":
-                        enableWiFiDirectIfNecessary();
-                        result.success(null);
-                        break;
-                    default:
+                .setMethodCallHandler((call, result) -> {
+                    switch (call.method) {
+                        case "discoverDevices":
+                            startDeviceDiscovery(result);
+                            break;
+                        case "disconnectFromDevice":
+                            disconnectFromDevice(result);
+                            break;
+                        case "connectToDevice":
+                            String deviceAddress = call.argument("deviceAddress");
+                            connectToDevice(deviceAddress, result);
+                            break;
+                        case "isDeviceConnected":
+                            isDeviceConnected(isConnected -> result.success(isConnected));
+                            break;
+                        case "isLocationEnabled":
+                            result.success(isLocationEnabled());
+                            break;
+                        case "enableLocation":
+                            enableLocationIfNecessary();
+                            result.success(null);
+                            break;
+                        case "isWiFiDirectEnabled":
+                            result.success(isWiFiDirectEnabled());
+                            break;
+                        case "enableWiFiDirect":
+                            enableWiFiDirectIfNecessary();
+                            result.success(null);
+                            break;
+                        default:
+                            result.notImplemented();
+                            break;
+                    }
+                });
+
+        // Новый канал для работы с файлами
+        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), FILE_PICKER_CHANNEL)
+                .setMethodCallHandler((call, result) ->
+
+                {
+                    if (call.method.equals("fetchFiles")) {
+                        String fileType = call.argument("fileType");
+                        ArrayList<String> files = fetchFiles(fileType);
+                        result.success(files);
+                    } else {
                         result.notImplemented();
-                        break;
+                    }
+                });
+    }
+
+    private ArrayList<String> fetchFiles(String fileType) {
+        ArrayList<String> files = new ArrayList<>();
+        Uri uri;
+        String[] projection;
+
+        // Определяем типы файлов для запроса
+        switch (fileType) {
+            case "images":
+                uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+                projection = new String[] { MediaStore.Images.Media.DATA };
+                break;
+            case "videos":
+                uri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+                projection = new String[] { MediaStore.Video.Media.DATA };
+                break;
+            case "audio":
+                uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                projection = new String[] { MediaStore.Audio.Media.DATA };
+                break;
+            default: // Для всех типов файлов
+                uri = MediaStore.Files.getContentUri("external");
+                projection = new String[] { MediaStore.Files.FileColumns.DATA };
+                break;
+        }
+
+        // Выполняем запрос через ContentResolver
+        try (Cursor cursor = getContentResolver().query(uri, projection, null, null, null)) {
+            if (cursor != null) {
+                int columnIndex = cursor.getColumnIndexOrThrow(projection[0]);
+                while (cursor.moveToNext()) {
+                    String filePath = cursor.getString(columnIndex);
+                    // Проверяем, находится ли файл в памяти устройства
+                    if (filePath.startsWith("/storage/emulated/0/")) {
+                        files.add(filePath);
+                    }
                 }
-            });
+            }
+        } catch (Exception e) {
+            Log.e("FilePicker", "Ошибка при получении файлов: " + e.getMessage());
+        }
+
+        return files;
+    }
+
+    private void requestStoragePermissions() {
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[] { Manifest.permission.READ_EXTERNAL_STORAGE }, 1);
+        }
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        requestStoragePermissions();
     }
 
     // Метод для отключения от устройства
     // private void disconnectFromDevice(MethodChannel.Result result) {
-    //     wifiP2pManager.cancelConnect(channel, new WifiP2pManager.ActionListener() {
-    //         @Override
-    //         public void onSuccess() {
-    //             result.success("Устройство успешно отключено");
-    //         }
+    // wifiP2pManager.cancelConnect(channel, new WifiP2pManager.ActionListener() {
+    // @Override
+    // public void onSuccess() {
+    // result.success("Устройство успешно отключено");
+    // }
 
-    //         @Override
-    //         public void onFailure(int reason) {
-    //             result.error("DISCONNECT_FAILED", "Не удалось отключиться от устройства", null);
-    //         }
-    //     });
+    // @Override
+    // public void onFailure(int reason) {
+    // result.error("DISCONNECT_FAILED", "Не удалось отключиться от устройства",
+    // null);
+    // }
+    // });
     // }
 
     private void disconnectFromDevice(MethodChannel.Result result) {
 
         wifiP2pManager.requestConnectionInfo(channel, info -> {
-            if(info.groupFormed){
+            if (info.groupFormed) {
                 wifiP2pManager.removeGroup(channel, new WifiP2pManager.ActionListener() {
                     @Override
                     public void onSuccess() {
@@ -126,7 +216,7 @@ public class MainActivity extends FlutterActivity {
                         result.error("DISCONNECT_FAILED", "Не удалось отключиться от устройства" + errorMessage, null);
                     }
                 });
-            } else{
+            } else {
                 result.success("Устройство уже отключено");
             }
         });
@@ -154,12 +244,12 @@ public class MainActivity extends FlutterActivity {
     public interface BooleanCallback {
         void onResult(boolean result);
     }
+
     private void isDeviceConnected(BooleanCallback callback) {
         wifiP2pManager.requestConnectionInfo(channel, info -> {
             callback.onResult(info.groupFormed);
         });
     }
-
 
     // Проверка и включение геолокации, если она выключена
     private void enableLocationIfNecessary() {
@@ -169,7 +259,7 @@ public class MainActivity extends FlutterActivity {
         }
     }
 
-    private boolean isLocationEnabled(){
+    private boolean isLocationEnabled() {
         LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
                 || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
@@ -211,12 +301,14 @@ public class MainActivity extends FlutterActivity {
 
     // Проверка разрешения на использование местоположения
     private boolean isLocationPermissionGranted() {
-        return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        return ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
     // Запрос разрешения на использование местоположения
     private void requestLocationPermission() {
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
+        ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION },
+                REQUEST_LOCATION_PERMISSION);
     }
 
     // Приемник для обработки Wi-Fi Direct событий
@@ -248,10 +340,12 @@ public class MainActivity extends FlutterActivity {
     };
 
     private void sendDiscoveredDevicesToFlutter(List<Map<String, String>> deviceInfoList) {
-        MethodChannel methodChannel = new MethodChannel(getFlutterEngine().getDartExecutor().getBinaryMessenger(), CHANNEL);
+        MethodChannel methodChannel = new MethodChannel(getFlutterEngine().getDartExecutor().getBinaryMessenger(),
+                CHANNEL);
         List<String> deviceInfoListAsString = new ArrayList<>();
 
-        // Преобразуем каждый элемент в строку (например, формат deviceName, deviceAddress)
+        // Преобразуем каждый элемент в строку (например, формат deviceName,
+        // deviceAddress)
         for (Map<String, String> deviceInfo : deviceInfoList) {
             String deviceName = deviceInfo.get("deviceName");
             String deviceAddress = deviceInfo.get("deviceAddress");
@@ -262,12 +356,10 @@ public class MainActivity extends FlutterActivity {
         methodChannel.invokeMethod("discoveredDevices", deviceInfoListAsString);
     }
 
-
-    
     @Override
     protected void onDestroy() {
         super.onDestroy();
         unregisterReceiver(wifiP2pReceiver);
     }
-}
 
+}
