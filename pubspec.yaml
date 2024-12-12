@@ -17,6 +17,7 @@ dependencies:
   go_router: ^14.4.1
   get_it: ^8.0.2
   file_picker: ^8.1.4
+  lottie: ^2.2.0
 
 dev_dependencies:
   flutter_test:
@@ -32,6 +33,7 @@ flutter:
     - assets/send-icon.png
     - assets/upload-icon.png
     - assets/app_bar_logo.png
+
 
   # example:
   # fonts:

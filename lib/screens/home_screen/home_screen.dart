@@ -99,11 +99,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SliverToBoxAdapter(
             child: SizedBox(height: 40),
           ),
-          const SliverToBoxAdapter(
-            child: CircleIcon(
-              imageUrl: 'assets/upload-icon.png',
-              color: Color(0xFFc1ff72),
-              size: 200,
+          SliverToBoxAdapter(
+            child: GestureDetector(
+              child: const CircleIcon(
+                imageUrl: 'assets/upload-icon.png',
+                color: Color(0xFFc1ff72),
+                size: 200,
+              ),
+              onTap: () {
+                if (!isWifiDirectEnabled || !isLocationEnabled) {
+                  context.go('/enable');
+                  return;
+                }
+                context.go('/waiting-for-connection');
+              },
             ),
           ),
           const SliverToBoxAdapter(

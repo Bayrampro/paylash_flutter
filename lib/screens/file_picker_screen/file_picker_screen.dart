@@ -30,7 +30,6 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
   @override
   Widget build(BuildContext context) {
     final isDeviceConnected = ref.watch(isDeviceConnectedProvider);
-    final filePicker = ref.watch(filePickerProvider); // Теперь работает
 
     // Проверяем подключение устройства
     WidgetsBinding.instance.addPostFrameCallback(
