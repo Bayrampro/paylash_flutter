@@ -203,7 +203,9 @@ class _FilePickerScreenState extends ConsumerState<FilePickerScreen> {
   }
 
   void _sendSelectedFiles() {
-    // Логика отправки файлов
-    context.go('/file_transfer', extra: _selectedFiles);
+    if (_selectedFiles.isNotEmpty) {
+      // Navigate to FileTransferScreen with selected files
+      context.go('/file-transfer', extra: _selectedFiles);
+    }
   }
 }

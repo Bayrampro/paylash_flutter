@@ -42,10 +42,25 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import java.net.Socket;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.OutputStream;
+import android.os.Handler;
+import android.os.Looper;
+
+import io.flutter.embedding.android.FlutterActivity;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.OutputStream;
+import android.os.Handler;
+import android.os.Looper;
 
 public class MainActivity extends FlutterActivity {
     private static final String CHANNEL = "com.bynet.paylash/wifiDirect";
     private static final String FILE_PICKER_CHANNEL = "com.bynet.paylash/filePicker"; // Новый канал для файлов
+    private static final String FILE_TRANSFER_CHANNEL = "com.bynet.paylash/file_transfer";
 
     private WifiP2pManager wifiP2pManager;
     private Channel channel;
@@ -110,6 +125,52 @@ public class MainActivity extends FlutterActivity {
                         result.notImplemented();
                     }
                 });
+        new MethodChannel(flutterEngine.getDartExecutor().getBinaryMessenger(), FILE_TRANSFER_CHANNEL)
+                .setMethodCallHandler((call, result) -> {
+                    if (call.method.equals("startFileTransfer")) {
+                        String filePath = call.argument("filePath");
+                        startFileTransfer(filePath, result);
+                    } else {
+                        result.notImplemented();
+                    }
+                });
+    }
+
+    private void startFileTransfer(String filePath, MethodChannel.Result result) {
+        File file = new File(filePath);
+        if (!file.exists()) {
+            result.error("FILE_NOT_FOUND", "Файл не найден", null);
+            return;
+        }
+
+        new Thread(() -> {
+            try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                // Replace with your actual socket's IP and port
+                Socket socket = new Socket("192.168.1.1", 8888);
+                OutputStream outputStream = socket.getOutputStream();
+
+                byte[] buffer = new byte[1024];
+                long bytesTransferred = 0;
+                int len;
+                while ((len = fileInputStream.read(buffer)) > 0) {
+                    outputStream.write(buffer, 0, len);
+                    bytesTransferred += len;
+
+                    // Update progress
+                    double progress = ((double) bytesTransferred / file.length()) * 100;
+                    new Handler(Looper.getMainLooper())
+                            .post(() -> new MethodChannel(getFlutterEngine().getDartExecutor().getBinaryMessenger(),
+                                    "com.example.file_transfer")
+                                    .invokeMethod("updateProgress", progress));
+                }
+
+                outputStream.close();
+                socket.close();
+                result.success("TRANSFER_SUCCESS");
+            } catch (Exception e) {
+                result.error("TRANSFER_ERROR", "Ошибка передачи файла: " + e.getMessage(), null);
+            }
+        }).start();
     }
 
     private ArrayList<String> fetchFiles(String fileType) {
